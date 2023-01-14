@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import dayjs from "dayjs";
 dotenv.config();
@@ -48,7 +48,7 @@ server.post("/participants", async (req, res) => {
       to: "Todos",
       text: "entra na sala...",
       type: "status",
-      time: dayjs().format('HH:mm:ss'),
+      time: dayjs().format("HH:mm:ss"),
     });
 
     res.sendStatus(201);
@@ -68,20 +68,34 @@ server.get("/messages", (req, res) => {
 
 server.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
-  try{
-  await db.collection("messages").insertOne({
-    from: req.headers.user,
-    to,
-    text,
-    type,
-    time: dayjs().format('HH:mm:ss'),
-  });
-  res.sendStatus(201);
-} catch {
-  res.sendStatus(500);
-}
+  try {
+    await db.collection("messages").insertOne({
+      from: req.headers.user,
+      to,
+      text,
+      type,
+      time: dayjs().format("HH:mm:ss"),
+    });
+    res.sendStatus(201);
+  } catch {
+    res.sendStatus(500);
+  }
 });
 
-// server.status('/messages', (req,res)=>{
-//
+server.delete("/messages/:id", (req, res) => {
+  const id = req.params.id;
+  db.collection("messages").deleteOne({ _id: ObjectId(id) });
+});
+
+server.post("/status", (req, res) => {
+  const user = req.headers.user; 
+  if (user) {
+   db.collection("participants").updateOne({ name:user},{ $set:{lastStatus: Date.now()}})
+  }
+});
+
+// function deleteParticipant(){
+// server.delete("/participants" (req, res)=>{
+  
 // })
+// }
