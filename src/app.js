@@ -19,7 +19,7 @@ mongoClient
 
 server.use(cors());
 server.use(express.json());
-server.listen(5000, () => console.log("Servidor Funfou"));
+server.listen(5001, () => console.log("Servidor Funfou"));
 
 server.get("/participants", (req, res) => {
   db.collection("participants")
@@ -48,7 +48,7 @@ server.post("/participants", async (req, res) => {
       to: "Todos",
       text: "entra na sala...",
       type: "status",
-      time: `${dayjs().hour()}:${dayjs().minute()}:${dayjs().second()}`,
+      time: dayjs().format('HH:mm:ss'),
     });
 
     res.sendStatus(201);
@@ -74,7 +74,7 @@ server.post("/messages", async (req, res) => {
     to,
     text,
     type,
-    time: `${dayjs().hour()}:${dayjs().minute()}:${dayjs().second()}`,
+    time: dayjs().format('HH:mm:ss'),
   });
   res.sendStatus(201);
 } catch {
