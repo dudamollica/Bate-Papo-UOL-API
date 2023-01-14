@@ -19,7 +19,7 @@ mongoClient
 
 server.use(cors());
 server.use(express.json());
-server.listen(5001, () => console.log("Servidor Funfou"));
+server.listen(5000, () => console.log("Servidor Funfou"));
 
 server.get("/participants", (req, res) => {
   db.collection("participants")
