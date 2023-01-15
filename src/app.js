@@ -23,8 +23,8 @@ server.use(cors());
 server.use(express.json());
 server.listen(5000, () => console.log("Servidor Funfou"));
 
-checkActivid
-setInterval(checkActivid, 15000)
+checkActivid;
+setInterval(checkActivid, 15000);
 
 server.get("/participants", (req, res) => {
   db.collection("participants")
@@ -42,7 +42,7 @@ server.post("/participants", async (req, res) => {
   if (name) {
     const userExist = await db.collection("participants").findOne({ name });
 
-    if (userExist) return res.status(409);
+    if (userExist) return res.sendStatus(409);
 
     await db
       .collection("participants")
@@ -86,33 +86,34 @@ server.post("/messages", async (req, res) => {
   }
 });
 
-
 server.post("/status", async (req, res) => {
-  user = req.headers.user; 
-  if (user) {
-   db.collection("participants").updateOne({ name:user},{ $set:{lastStatus: Date.now()}})
-  }
-  
-  const statusUser= await db.collection("participants").findOne({name:user})
-  convertedStatus = Number(statusUser.lastStatus)/1000
-  
+  user = req.headers.user;
+  db.collection("participants").updateOne(
+    { name: user },
+    { $set: { lastStatus: Date.now() } }
+  );
+  res.sendStatus(200);
+  const statusUser = await db
+    .collection("participants")
+    .findOne({ name: user });
+  convertedStatus = Number(statusUser.lastStatus) / 1000;
 });
 
-function checkActivid(){
-  if(user){
-  let timeNow = Date.now()
-  const actividTime = (timeNow/1000 - convertedStatus)
-  if(actividTime>10){
-  db.collection("participants").deleteOne({name:user})
-  db.collection("messages").insertOne({
-    from: user,
-    to: "Todos",
-    text: "sai da sala...",
-    type: "status",
-    time: dayjs().format("HH:mm:ss"),
-  });
+function checkActivid() {
+  if (user) {
+    let timeNow = Date.now();
+    const actividTime = (timeNow / 1000) - convertedStatus;
+    if (actividTime > 10) {
+      db.collection("participants").deleteOne({ name: user });
+      db.collection("messages").insertOne({
+        from: user,
+        to: "Todos",
+        text: "sai da sala...",
+        type: "status",
+        time: dayjs().format("HH:mm:ss"),
+      });
+    }
   }
-}
 }
 
 server.delete("/messages/:id", (req, res) => {
