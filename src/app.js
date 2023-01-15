@@ -23,7 +23,6 @@ server.use(cors());
 server.use(express.json());
 server.listen(5000, () => console.log("Servidor Funfou"));
 
-checkActivid;
 setInterval(checkActivid, 15000);
 
 server.get("/participants", (req, res) => {
@@ -65,7 +64,15 @@ server.get("/messages", (req, res) => {
     .find()
     .toArray()
     .then((dados) => {
-      return res.send(dados);
+      const dadosFilter = dados.filter(function (obj) {
+        return (
+          obj.from == user ||
+          obj.type == "message" ||
+          (obj.type == "private_message" && obj.to == user) ||
+          obj.type == "status"
+        );
+      });
+      return res.send(dadosFilter);
     })
     .catch(() => res.sendStatus(500).send("Não funcionou"));
 });
@@ -88,22 +95,24 @@ server.post("/messages", async (req, res) => {
 
 server.post("/status", async (req, res) => {
   user = req.headers.user;
-  db.collection("participants").updateOne(
-    { name: user },
-    { $set: { lastStatus: Date.now() } }
-  );
-  res.sendStatus(200);
-  const statusUser = await db
-    .collection("participants")
-    .findOne({ name: user });
-  convertedStatus = Number(statusUser.lastStatus) / 1000;
+  if (user) {
+    db.collection("participants").updateOne(
+      { name: user },
+      { $set: { lastStatus: Date.now() } }
+    );
+    res.sendStatus(200);
+    const statusUser = await db
+      .collection("participants")
+      .findOne({ name: user });
+    convertedStatus = Number(statusUser.lastStatus) / 1000;
+  }
 });
 
 function checkActivid() {
   if (user) {
     let timeNow = Date.now();
-    const actividTime = (timeNow / 1000) - convertedStatus;
-    if (actividTime > 10) {
+    const actividTime = timeNow / 1000 - convertedStatus;
+    if (actividTime >= 10) {
       db.collection("participants").deleteOne({ name: user });
       db.collection("messages").insertOne({
         from: user,
