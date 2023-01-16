@@ -8,7 +8,6 @@ dotenv.config();
 const server = express();
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 let db;
-let convertedStatus;
 let user;
 
 mongoClient
@@ -23,6 +22,7 @@ server.use(cors());
 server.use(express.json());
 server.listen(5000, () => console.log("Servidor Funfou"));
 
+checkActivid()
 setInterval(checkActivid, 15000);
 
 server.get("/participants", (req, res) => {
@@ -41,9 +41,8 @@ server.post("/participants", async (req, res) => {
 
   if(!name) return res.sendStatus(422)
   
-    const userExist = await db.collection("participants").findOne({ name });
-
-    if (userExist) return res.sendStatus(409);
+  const userExist = await db.collection("participants").findOne({ name });
+  if (userExist) return res.sendStatus(409);
 
     await db
       .collection("participants")
@@ -96,24 +95,19 @@ server.post("/messages", async (req, res) => {
 });
 
 server.post("/status", async (req, res) => {
-  user = req.headers.user;
-  if (user) {
-    db.collection("participants").updateOne(
-      { name: user },
+  const name = req.headers.user
+  const userExist = await db.collection("participants").findOne({name})
+  if(!userExist) return sendStatus(404)
+    await db.collection("participants").updateOne(
+      { name },
       { $set: { lastStatus: Date.now() } }
     );
     res.sendStatus(200);
-    const statusUser = await db
-      .collection("participants")
-      .findOne({ name: user });
-    // convertedStatus = Number(statusUser.lastStatus) / 1000;
-  }
 });
 
 function checkActivid() {
   if (user) {
     let timeNow = Date.now();
-    // const actividTime = timeNow / 1000 - convertedStatus;
 
     db.collection("participants")
       .find()
