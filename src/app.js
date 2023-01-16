@@ -39,7 +39,8 @@ server.post("/participants", async (req, res) => {
   const { name } = req.body;
   user = req.body.name;
 
-  if (name) {
+  if(!name) return res.sendStatus(422)
+  
     const userExist = await db.collection("participants").findOne({ name });
 
     if (userExist) return res.sendStatus(409);
@@ -57,7 +58,6 @@ server.post("/participants", async (req, res) => {
     });
 
     res.sendStatus(201);
-  }
 });
 
 server.get("/messages", (req, res) => {
@@ -106,14 +106,14 @@ server.post("/status", async (req, res) => {
     const statusUser = await db
       .collection("participants")
       .findOne({ name: user });
-    convertedStatus = Number(statusUser.lastStatus) / 1000;
+    // convertedStatus = Number(statusUser.lastStatus) / 1000;
   }
 });
 
 function checkActivid() {
   if (user) {
     let timeNow = Date.now();
-    const actividTime = timeNow / 1000 - convertedStatus;
+    // const actividTime = timeNow / 1000 - convertedStatus;
 
     db.collection("participants")
       .find()
@@ -126,23 +126,21 @@ function checkActivid() {
           .filter(function (obj) {
             return (timeNow / 1000) - (obj / 1000) >= 10;
           });
-        for (let i = 0; i < dadosFilter.length; i++) {
-          db.collection("participants").deleteOne({
-            lastStatus: dadosFilter[i],
-          });
+        for (let i = 0; i < dados.length; i++) {
+          if (dadosFilter.includes(dados[i].lastStatus)) {
+            db.collection("messages").insertOne({
+              from: dados[i].name,
+              to: "Todos",
+              text: "sai da sala...",
+              type: "status",
+              time: dayjs().format("HH:mm:ss"),
+            });
+            db.collection("participants").deleteOne({
+              lastStatus: dadosFilter[i],
+            });
+          }
         }
       });
-
-    if (actividTime >= 10) {
-      db.collection("participants").deleteOne({ name: user });
-      db.collection("messages").insertOne({
-        from: user,
-        to: "Todos",
-        text: "sai da sala...",
-        type: "status",
-        time: dayjs().format("HH:mm:ss"),
-      });
-    }
   }
 }
 
