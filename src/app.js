@@ -37,6 +37,7 @@ server.get("/participants", (req, res) => {
 
 server.post("/participants", async (req, res) => {
   const { name } = req.body;
+  user = req.body.name;
 
   if (name) {
     const userExist = await db.collection("participants").findOne({ name });
@@ -66,10 +67,11 @@ server.get("/messages", (req, res) => {
     .then((dados) => {
       const dadosFilter = dados.filter(function (obj) {
         return (
+          obj.to == user ||
           obj.from == user ||
           obj.type == "message" ||
-          (obj.type == "private_message" && obj.to == user) ||
-          obj.type == "status"
+          obj.type == "status" ||
+          obj.to == "Todos"
         );
       });
       return res.send(dadosFilter);
@@ -112,6 +114,25 @@ function checkActivid() {
   if (user) {
     let timeNow = Date.now();
     const actividTime = timeNow / 1000 - convertedStatus;
+
+    db.collection("participants")
+      .find()
+      .toArray()
+      .then((dados) => {
+        const dadosFilter = dados
+          .map(function (obj) {
+            return obj.lastStatus;
+          })
+          .filter(function (obj) {
+            return (timeNow / 1000) - (obj / 1000) >= 10;
+          });
+        for (let i = 0; i < dadosFilter.length; i++) {
+          db.collection("participants").deleteOne({
+            lastStatus: dadosFilter[i],
+          });
+        }
+      });
+
     if (actividTime >= 10) {
       db.collection("participants").deleteOne({ name: user });
       db.collection("messages").insertOne({
