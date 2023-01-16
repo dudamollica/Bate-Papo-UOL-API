@@ -42,7 +42,7 @@ server.post("/participants", async (req, res) => {
   const participants = req.body
 
   const participantsSchema = joi.object({
-    name: joi.string()
+    name: joi.string().required()
   })
   const validation = participantsSchema.validate(participants)
   if (validation.error) return res.sendStatus(422)
@@ -102,6 +102,11 @@ server.get("/messages", (req, res) => {
 
 server.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
+  const userExist = await db.collection("participants").findOne({ name: req.headers.user});
+  if (!userExist) return res.sendStatus(422);
+  if (!req.headers.user) return res.sendStatus(422)
+  if (type !== "message" && type != "status" && type != "private_message") return res.sendStatus(422)
+
   const messages = req.body
   const messagesSchema = joi.object({
     to: joi.string().required(),
@@ -110,8 +115,6 @@ server.post("/messages", async (req, res) => {
   })
   const validation = messagesSchema.validate(messages)
   if (validation.error) return res.sendStatus(422)
-
-  // if(!req.headers.user) return res.sendStatus(422)
 
   try {
     await db.collection("messages").insertOne({
