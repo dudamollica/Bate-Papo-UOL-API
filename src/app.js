@@ -60,6 +60,7 @@ server.post("/participants", async (req, res) => {
 });
 
 server.get("/messages", (req, res) => {
+  const limit = parseInt(req.query.limit)
   db.collection("messages")
     .find()
     .toArray()
@@ -73,6 +74,9 @@ server.get("/messages", (req, res) => {
           obj.to == "Todos"
         );
       });
+      if(limit){
+        return res.send(dadosFilter.filter((m, index)=> index >= dadosFilter.length-limit))
+      }
       return res.send(dadosFilter);
     })
     .catch(() => res.sendStatus(500).send("Não funcionou"));
@@ -97,7 +101,7 @@ server.post("/messages", async (req, res) => {
 server.post("/status", async (req, res) => {
   const name = req.headers.user
   const userExist = await db.collection("participants").findOne({name})
-  if(!userExist) return sendStatus(404)
+  if(!userExist) return res.sendStatus(404)
     await db.collection("participants").updateOne(
       { name },
       { $set: { lastStatus: Date.now() } }
