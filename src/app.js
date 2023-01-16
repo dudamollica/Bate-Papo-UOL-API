@@ -3,6 +3,7 @@ import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import dayjs from "dayjs";
+import joi from "joi";
 dotenv.config();
 
 const server = express();
@@ -39,7 +40,11 @@ server.post("/participants", async (req, res) => {
   const { name } = req.body;
   user = req.body.name;
 
-  if(!name) return res.sendStatus(422)
+  const nameSchema = joi.object({
+    name: joi.string()
+  })
+  const validation = nameSchema.validate(name)
+  if (validation.error) return res.sendStatus(422)
   
   const userExist = await db.collection("participants").findOne({ name });
   if (userExist) return res.sendStatus(409);
@@ -75,7 +80,8 @@ server.get("/messages", (req, res) => {
         );
       });
       if(limit){
-        return res.send(dadosFilter.filter((m, index)=> index >= dadosFilter.length-limit))
+        const limitMessages = dadosFilter.filter((m, index)=> index >= dadosFilter.length-limit)
+        return res.send(limitMessages)
       }
       return res.send(dadosFilter);
     })
